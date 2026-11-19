@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PetCare Manager 🐾</title>
+<style>
+  :root {
+    --coral: #ff6b57;
+    --coral-dark: #e5533f;
+    --coral-light: #ffe3dd;
+    --cream: #fff8f0;
+    --peach: #ffefe6;
+    --mint: #e8f6ee;
+    --sky: #eaf3fb;
+    --lilac: #f1ecfa;
+    --ink: #4a3f39;
+    --muted: #9b8d84;
+    --white: #ffffff;
+    --brown: #8d6748;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI Rounded", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    background: linear-gradient(160deg, #ffe3dd, #ffefe6 60%, #f1ecfa);
+    color: var(--ink);
+    line-height: 1.5;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ---------- Phone frame ---------- */
+  .phone {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 0 40px rgba(141, 103, 72, .18);
+  }
+  @media (min-width: 480px) {
+    body { padding: 24px 0; }
+    .phone {
+      min-height: calc(100vh - 48px);
+      max-height: 900px;
+      border-radius: 36px;
+      overflow: hidden;
+      border: 10px solid #4a3f39;
+    }
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    background: var(--coral);
+    color: var(--white);
+    padding: 18px 20px 16px;
+    text-align: center;
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
+    box-shadow: 0 4px 14px rgba(255, 107, 87, .3);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 20px; font-weight: bold; letter-spacing: .5px; }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px 96px;
+  }
+  section { display: none; }
+  section.active { display: block; }
+  h2 { font-size: 20px; color: var(--coral-dark); margin-bottom: 14px; }
+  h2::before { content: "🐾 "; }
+  h3 { font-size: 15px; color: var(--coral-dark); margin-bottom: 10px; }
+  h3::before { content: "🐾 "; font-size: 12px; }
+  .card {
+    background: var(--white);
+    border-radius: 22px;
+    padding: 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 12px rgba(141, 103, 72, .12);
+  }
+  .muted { color: var(--muted); font-size: 12px; }
+
+  /* ---------- Bottom tab bar ---------- */
+  .tabbar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    display: flex;
+    border-top: 2px dashed var(--peach);
+    padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
+    z-index: 10;
+  }
+  .tabbar button {
+    flex: 1;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: bold;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 0;
+    border-radius: 14px;
+  }
+  .tabbar button .tab-icon { font-size: 20px; }
+  .tabbar button.active { color: var(--coral); background: var(--coral-light); }
+
+  /* ---------- Owner profile ---------- */
+  .profile-card {
+    background: var(--peach);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .avatar {
+    width: 60px; height: 60px;
+    background: var(--coral);
+    color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stats { display: flex; gap: 8px; margin-top: 6px; }
+  .stat-chip {
+    background: var(--white);
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: 12px;
+    color: var(--coral-dark);
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(141,103,72,.1);
+  }
+
+  /* ---------- Pet list (owned) ---------- */
+  .pet-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--cream);
+    border-radius: 16px;
+    margin-bottom: 8px;
+  }
+  .pet-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    border: 3px solid transparent;
+  }
+  .pet-info { flex: 1; min-width: 0; }
+  .pet-info b { display: block; font-size: 14px; }
+  .pet-actions { display: flex; gap: 6px; }
+
+  /* ---------- Co-owners ---------- */
+  .coowner-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: var(--sky);
+    border-radius: 16px;
+    margin-bottom: 8px;
+  }
+  .coowner-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .role-chip {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--coral-dark);
+    white-space: nowrap;
+  }
+
+  /* ---------- Forms ---------- */
+  form label { display: block; font-size: 12px; font-weight: bold; color: var(--coral-dark); margin: 10px 0 4px; }
+  form input, form select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--peach);
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  form input:focus, form select:focus { outline: none; border-color: var(--coral); }
+  .btn {
+    background: var(--coral);
+    color: var(--white);
+    border: none;
+    padding: 11px 24px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 14px;
+    border-radius: 999px;
+    box-shadow: 0 3px 8px rgba(255, 107, 87, .35);
+    transition: transform .1s, background .15s;
+    width: 100%;
+  }
+  .btn:hover { background: var(--coral-dark); }
+  .btn:active { transform: scale(.96); }
+  .btn-small {
+    background: var(--coral-light);
+    color: var(--coral-dark);
+    border: none;
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background .15s;
+  }
+  .btn-small:hover { background: var(--coral); color: var(--white); }
+  .btn-small.danger { background: var(--lilac); color: #6b4f9e; }
+  .btn-small.danger:hover { background: #b79ae0; color: var(--white); }
+
+  /* ---------- Appointments ---------- */
+  .appt-item {
+    padding: 10px;
+    background: var(--cream);
+    border-radius: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 50%; vertical-align: middle; }
+  .tag {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--mint);
+    color: #3e7d58;
+    white-space: nowrap;
+  }
+  .announce-item {
+    padding: 10px 4px;
+    border-bottom: 2px dashed var(--peach);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+  }
+  .announce-item:last-child { border-bottom: none; }
+
+  /* ---------- Community horizontal scroll ---------- */
+  .community-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 2px 12px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .community-scroll::-webkit-scrollbar { height: 6px; }
+  .community-scroll::-webkit-scrollbar-thumb { background: var(--coral-light); border-radius: 999px; }
+  .community-card {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    background: var(--white);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(141, 103, 72, .15);
+  }
+  .community-thumb {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+  }
+  .community-body { padding: 10px 12px 12px; }
+  .community-body .tag { margin-bottom: 6px; display: inline-block; }
+  .community-body p { font-size: 12px; line-height: 1.45; color: var(--ink); }
+
+  /* ---------- Services ---------- */
+  .filters { display: flex; gap: 10px; margin-bottom: 12px; }
+  .filters div { flex: 1; }
+  .filters label { font-size: 12px; font-weight: bold; color: var(--coral-dark); display: block; margin-bottom: 4px; }
+  .filters select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--peach);
+    border-radius: 999px;
+    font-family: inherit;
+    background: var(--cream);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .filters select:focus { outline: none; border-color: var(--coral); }
+  .service-item {
+    padding: 12px;
+    background: var(--cream);
+    border-radius: 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background .15s, box-shadow .15s;
+    display: block;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .service-item:hover { background: var(--peach); box-shadow: 0 3px 10px rgba(255, 107, 87, .2); }
+  .service-item b { color: var(--ink); }
+  .service-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .service-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .service-btn {
+    background: var(--white);
+    border: 2px solid var(--peach);
+    color: var(--coral-dark);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .service-btn:hover { background: var(--coral); border-color: var(--coral); color: var(--white); }
+  .empty { color: var(--muted); font-style: italic; padding: 10px 0; font-size: 13px; }
+  .linkout {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--coral);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px 0 2px;
+    cursor: pointer;
+  }
+  .linkout:hover { color: var(--coral-dark); }
+
+  /* collapsible add-forms */
+  details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--coral);
+    font-size: 14px;
+    list-style: none;
+    padding: 8px 0 2px;
+  }
+  details summary::before { content: "➕ "; }
+  details[open] summary::before { content: "➖ "; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <header>
+    <h1>🐾 PetCare Manager</h1>
+  </header>
+
+  <main>
+
+    <!-- ===================== Tab 1: Home / Owner ===================== -->
+    <section id="section-home" class="active">
+
+      <!-- Section 1: Greeting -->
+      <div class="card profile-card">
+        <div class="avatar">👩</div>
+        <div>
+          <b id="greeting" style="font-size:16px;">Hello!</b>
+          <div class="muted" id="greeting-sub"></div>
+          <div class="stats">
+            <span class="stat-chip" id="stat-pets">🐾 0 pets</span>
+            <span class="stat-chip" id="stat-appts">🗓️ 0 appts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Upcoming appointments -->
+      <div class="card">
+        <h3>Upcoming Appointments</h3>
+        <div id="home-appt-list"></div>
+        <div id="home-appt-empty" style="display:none;">
+          <div class="empty">No upcoming appointments. 🐾</div>
+          <button class="btn" onclick="showSection('tracker')">➕ Add an appointment</button>
+        </div>
+        <button class="linkout" onclick="showSection('tracker')">Manage &amp; view all appointments →</button>
+      </div>
+
+      <!-- Section 3: Community announcements -->
+      <h3>Community</h3>
+      <div class="community-scroll" id="announcements"></div>
+
+      <!-- Section 4: My Profile -->
+      <h2>My Profile</h2>
+      <div class="card">
+        <h3>My Pets</h3>
+        <div id="owner-pet-list"></div>
+        <details>
+          <summary>Add a new pet</summary>
+          <form id="pet-form">
+            <label for="pet-name">Pet name</label>
+            <input id="pet-name" type="text" required placeholder="e.g. Milo">
+            <label for="pet-emoji">Type</label>
+            <select id="pet-emoji">
+              <option value="🐶">Dog 🐶</option>
+              <option value="🐱">Cat 🐱</option>
+              <option value="🐰">Rabbit 🐰</option>
+              <option value="🐹">Hamster 🐹</option>
+              <option value="🦜">Bird 🦜</option>
+              <option value="🐢">Turtle 🐢</option>
+            </select>
+            <label for="pet-color">Color code</label>
+            <select id="pet-color">
+              <option value="#7a9e7e">Sage green</option>
+              <option value="#6b5b95">Plum</option>
+              <option value="#ff9f68">Sunny orange</option>
+              <option value="#5ba3d9">Sky blue</option>
+              <option value="#e57ba0">Rosy pink</option>
+            </select>
+            <button type="submit" class="btn">Add Pet 🐾</button>
+          </form>
+        </details>
+      </div>
+
+      <div class="card">
+        <h3>Co-Owners</h3>
+        <div class="muted" style="margin-bottom:10px;">People who help care for your pets — roommates, partners, family.</div>
+        <div id="coowner-list"></div>
+        <details>
+          <summary>Add a co-owner</summary>
+          <form id="coowner-form">
+            <label for="coowner-name">Name</label>
+            <input id="coowner-name" type="text" required placeholder="e.g. Sam">
+            <label for="coowner-relation">Relationship</label>
+            <select id="coowner-relation">
+              <option>Partner</option>
+              <option>Roommate</option>
+              <option>Family</option>
+            </select>
+            <label for="coowner-emoji">Avatar</label>
+            <select id="coowner-emoji">
+              <option value="🧑">🧑</option>
+              <option value="👩">👩</option>
+              <option value="👨">👨</option>
+              <option value="🧓">🧓</option>
+            </select>
+            <button type="submit" class="btn">Add Co-Owner 💛</button>
+          </form>
+        </details>
+      </div>
+    </section>
+
+    <!-- ===================== Tab 2: Tracker ===================== -->
+    <section id="section-tracker">
+      <h2>Tracker</h2>
+
+      <div class="card">
+        <h3>Appointment Schedule</h3>
+        <div id="appt-list"></div>
+        <details>
+          <summary>Add an appointment</summary>
+          <form id="appt-form">
+            <label for="appt-pet">Pet</label>
+            <select id="appt-pet" required></select>
+            <label for="appt-title">Appointment</label>
+            <input id="appt-title" type="text" required placeholder="e.g. Vet check-up">
+            <label for="appt-date">Date &amp; time</label>
+            <input id="appt-date" type="datetime-local" required>
+            <button type="submit" class="btn">Add Appointment 🗓️</button>
+          </form>
+        </details>
+      </div>
+    </section>
+
+    <!-- ===================== Tab 3: Services ===================== -->
+    <section id="section-services">
+      <h2>Pet Services</h2>
+
+      <div class="card">
+        <div class="filters">
+          <div>
+            <label for="filter-location">📍 Location</label>
+            <select id="filter-location">
+              <option value="all">All locations</option>
+              <option>Mont Kiara</option>
+              <option>Bangsar</option>
+              <option>Subang Jaya</option>
+              <option>Seri Petaling</option>
+              <option>Petaling Jaya</option>
+              <option>Shah Alam</option>
+              <option>Puchong</option>
+            </select>
+          </div>
+          <div>
+            <label for="filter-animal">🐾 Animal</label>
+            <select id="filter-animal">
+              <option value="all">All animals</option>
+              <option>Dog</option>
+              <option>Cat</option>
+              <option>Bird</option>
+              <option>Small pet</option>
+            </select>
+          </div>
+          <div>
+            <label for="filter-type">🏷️ Type</label>
+            <select id="filter-type">
+              <option value="all">All types</option>
+              <option value="Café">☕ Café</option>
+              <option value="Clinic">🩺 Clinic</option>
+              <option value="Park">🌳 Park</option>
+              <option value="Pet hotel">🏨 Pet hotel</option>
+              <option value="Sitter">🤗 Sitter</option>
+            </select>
+          </div>
+        </div>
+        <div id="service-list"></div>
+        <div class="empty" id="services-empty" style="display:none;">No services match the selected filters. 🐾</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ---------- Bottom tab bar ---------- -->
+  <nav class="tabbar">
+    <button id="nav-home" class="active" onclick="showSection('home')">
+      <span class="tab-icon">🏠</span>Home
+    </button>
+    <button id="nav-tracker" onclick="showSection('tracker')">
+      <span class="tab-icon">🗓️</span>Tracker
+    </button>
+    <button id="nav-services" onclick="showSection('services')">
+      <span class="tab-icon">📍</span>Services
+    </button>
+  </nav>
+
+</div>
+
+<script>
+// ------------------------- Data -------------------------
+let owner = { name: "estesmol", avatar: "👩" };
+let pets = [
+  { id: 1, name: "Milo", color: "#7a9e7e", emoji: "🐶" },
+  { id: 2, name: "Luna", color: "#6b5b95", emoji: "🐱" }
+];
+let coOwners = [
+  { id: 1, name: "Sam", relation: "Roommate", emoji: "🧑" }
+];
+let appointments = [
+  { id: 1, petId: 1, title: "Vet check-up", date: "2026-11-24T10:00" },
+  { id: 2, petId: 2, title: "Grooming session", date: "2026-11-26T14:30" }
+];
+const announcements = [
+  { tag: "Lost pet", emoji: "🐈", bg: "#ffe3dd", fg: "#c0392b", text: "Missing: \"Simba\", ginger tabby, last seen near TTDI. Slipper spotted at Mutiara Damansara — please help reunite!" },
+  { tag: "New café", emoji: "☕", bg: "#ffefe6", fg: "#b5651d", text: "Paws & Latte pet café now open in Bangsar, KL. Free puppuccino for every furbumania member!" },
+  { tag: "New park", emoji: "🌳", bg: "#e8f6ee", fg: "#3e7d58", text: "Desa ParkCity Central Park dog run reopens this weekend — agility course & splash zone included!" },
+  { tag: "Lost pet", emoji: "🐕", bg: "#ffe3dd", fg: "#c0392b", text: "Found: friendly beagle wandering near Seksyen 17, Shah Alam. Call 012-345 6789 to reunite!" },
+  { tag: "Event", emoji: "🎈", bg: "#eaf3fb", fg: "#3e7d58", text: "Pet Fun Fair at Setia City Mall this 29–30 Nov — adopt-a-pet drive, grooming demos & treats!" }
+];
+const services = [
+  { name: "Golden Paws Hotel", type: "🏨 Pet hotel", location: "Mont Kiara", animals: ["Dog", "Cat"], phone: "03-6412 8890" },
+  { name: "Whisker Inn", type: "🏨 Pet hotel", location: "Bangsar", animals: ["Cat", "Small pet"], phone: "03-2282 4415" },
+  { name: "Comfy Critters Sitting", type: "🤗 Sitter", location: "Subang Jaya", animals: ["Dog", "Cat", "Bird"], phone: "012-388 2109" },
+  { name: "Klinik Haiwan Seri Petaling", type: "🩺 Clinic", location: "Seri Petaling", animals: ["Dog", "Cat", "Bird", "Small pet"], phone: "03-9130 7788" },
+  { name: "PetVet Damansara", type: "🩺 Clinic", location: "Petaling Jaya", animals: ["Dog", "Cat"], phone: "03-7726 3350" },
+  { name: "Wagging Tails Daycare", type: "🤗 Sitter", location: "Shah Alam", animals: ["Dog"], phone: "019-275 6634" },
+  { name: "Aviary Boarding House", type: "🏨 Pet hotel", location: "Puchong", animals: ["Bird", "Small pet"], phone: "03-8068 1421" },
+  { name: "Paws & Latte Café", type: "☕ Café", location: "Bangsar", animals: ["Dog", "Cat"], phone: "03-2284 9050" },
+  { name: "Meow Moments Cat Café", type: "☕ Café", location: "Mont Kiara", animals: ["Cat"], phone: "03-6412 7723" },
+  { name: "Desa ParkCity Dog Run", type: "🌳 Park", location: "Petaling Jaya", animals: ["Dog"], phone: "-" },
+  { name: "Taman Tasik Titiwangsa", type: "🌳 Park", location: "Seri Petaling", animals: ["Dog", "Bird", "Small pet"], phone: "-" }
+];
+
+// ------------------------- Helpers -------------------------
+const $ = (id) => document.getElementById(id);
+function petById(id) { return pets.find(p => p.id === id); }
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " · " +
+         d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+let nextPetId = 3, nextApptId = 3, nextCoOwnerId = 2;
+
+// ------------------------- Navigation -------------------------
+function showSection(name) {
+  ["home", "tracker", "services"].forEach(s => {
+    $("section-" + s).classList.toggle("active", s === name);
+    $("nav-" + s).classList.toggle("active", s === name);
+  });
+  document.querySelector("main").scrollTop = 0;
+  if (name === "home") renderHome();
+}
+
+// ------------------------- Home (owner profile) -------------------------
+function renderHome() {
+  const hour = new Date().getHours();
+  const greetWord = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  $("greeting").textContent = greetWord + ", " + owner.name + "! 🐾";
+  $("greeting-sub").textContent = "Primary owner · pet parent";
+  $("stat-pets").textContent = "🐾 " + pets.length + " pet" + (pets.length === 1 ? "" : "s");
+  $("stat-appts").textContent = "🗓️ " + appointments.length + " appt" + (appointments.length === 1 ? "" : "s");
+
+  // Upcoming appointments widget
+  const upcoming = [...appointments].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
+  $("home-appt-list").innerHTML = upcoming.map(a => {
+    const p = petById(a.petId);
+    return `<div class="appt-item">
+      <span>${p ? p.emoji : "🐾"} <span class="dot" style="background:${p ? p.color : "#ccc"}"></span>${a.title} <span class="muted">— ${p ? p.name : "?"}</span></span>
+      <span class="tag">${fmtDate(a.date)}</span>
+    </div>`;
+  }).join("");
+  $("home-appt-empty").style.display = upcoming.length ? "none" : "block";
+
+  // Community announcements as horizontal scroll cards with thumbnails
+  $("announcements").innerHTML = announcements.map(a =>
+    `<div class="community-card">
+      <div class="community-thumb" style="background:${a.bg}">${a.emoji}</div>
+      <div class="community-body">
+        <span class="tag" style="background:${a.bg};color:${a.fg};">${a.tag}</span>
+        <p>${a.text}</p>
+      </div>
+    </div>`
+  ).join("");
+
+  $("owner-pet-list").innerHTML = pets.map(p =>
+    `<div class="pet-item">
+      <div class="pet-avatar" style="border-color:${p.color}">${p.emoji}</div>
+      <div class="pet-info"><b>${p.name}</b><span class="muted">${p.emoji === "🐱" ? "Cat" : p.emoji === "🐶" ? "Dog" : "Pet"} · schedule color</span>
+        <span class="dot" style="background:${p.color};margin-left:6px;"></span></div>
+      <div class="pet-actions">
+        <button class="btn-small" onclick="showSection('tracker')">Schedule</button>
+        <button class="btn-small danger" onclick="deletePet(${p.id})">✕</button>
+      </div>
+    </div>`
+  ).join("") || `<div class="empty">No pets yet — add your first fur baby! 🐾</div>`;
+
+  $("coowner-list").innerHTML = coOwners.map(c =>
+    `<div class="coowner-item">
+      <div class="coowner-avatar">${c.emoji}</div>
+      <div style="flex:1;"><b style="font-size:14px;">${c.name}</b><div class="muted">can view & manage pets</div></div>
+      <span class="role-chip">${c.relation}</span>
+      <button class="btn-small danger" onclick="deleteCoOwner(${c.id})">✕</button>
+    </div>`
+  ).join("") || `<div class="empty">No co-owners yet.</div>`;
+}
+
+$("pet-form").addEventListener("submit", e => {
+  e.preventDefault();
+  pets.push({ id: nextPetId++, name: $("pet-name").value.trim(), color: $("pet-color").value, emoji: $("pet-emoji").value });
+  $("pet-form").reset();
+  renderHome(); renderAppointments(); renderApptPetOptions();
+});
+
+function deletePet(id) {
+  pets = pets.filter(p => p.id !== id);
+  appointments = appointments.filter(a => a.petId !== id);
+  renderHome(); renderAppointments(); renderApptPetOptions();
+}
+
+$("coowner-form").addEventListener("submit", e => {
+  e.preventDefault();
+  coOwners.push({ id: nextCoOwnerId++, name: $("coowner-name").value.trim(), relation: $("coowner-relation").value, emoji: $("coowner-emoji").value });
+  $("coowner-form").reset();
+  renderHome();
+});
+
+function deleteCoOwner(id) {
+  coOwners = coOwners.filter(c => c.id !== id);
+  renderHome();
+}
+
+// ------------------------- Appointments -------------------------
+function renderApptPetOptions() {
+  $("appt-pet").innerHTML = pets.map(p =>
+    `<option value="${p.id}">${p.emoji} ${p.name}</option>`
+  ).join("") || `<option value="">— add a pet first —</option>`;
+}
+
+function renderAppointments() {
+  const rows = [...appointments].sort((a, b) => a.date.localeCompare(b.date)).map(a => {
+    const p = petById(a.petId);
+    return `<div class="appt-item">
+      <span>${p ? p.emoji : "🐾"} <span class="dot" style="background:${p ? p.color : "#ccc"}"></span>${a.title} <span class="muted">— ${p ? p.name : "?"}</span></span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <span class="tag">${fmtDate(a.date)}</span>
+        <button class="btn-small danger" onclick="deleteAppointment(${a.id})">✕</button>
+      </span>
+    </div>`;
+  });
+  $("appt-list").innerHTML = rows.join("") || `<div class="empty">No appointments scheduled.</div>`;
+}
+
+$("appt-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const petId = parseInt($("appt-pet").value, 10);
+  if (!petId) return;
+  appointments.push({ id: nextApptId++, petId, title: $("appt-title").value.trim(), date: $("appt-date").value });
+  $("appt-form").reset();
+  renderAppointments(); renderHome();
+});
+
+function deleteAppointment(id) {
+  appointments = appointments.filter(a => a.id !== id);
+  renderAppointments(); renderHome();
+}
+
+// ------------------------- Services -------------------------
+function renderServices() {
+  const loc = $("filter-location").value;
+  const ani = $("filter-animal").value;
+  const typ = $("filter-type").value;
+  const filtered = services.filter(s =>
+    (loc === "all" || s.location === loc) &&
+    (ani === "all" || s.animals.includes(ani)) &&
+    (typ === "all" || s.type.includes(typ))
+  );
+  $("services-empty").style.display = filtered.length ? "none" : "block";
+  $("service-list").innerHTML = filtered.map(s =>
+    `<a class="service-item" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + " " + s.location + " Malaysia")}" target="_blank" rel="noopener">
+      <b>${s.name}</b> <span class="muted">${s.type}</span>
+      <div class="service-meta">📍 ${s.location} · 🐾 ${s.animals.join(", ")}</div>
+      <div class="service-actions">
+        <a class="service-btn" href="tel:${s.phone.replace(/\s/g, "")}" onclick="event.stopPropagation()">📞 ${s.phone}</a>
+        <span class="service-btn">🗺️ Open in Maps</span>
+      </div>
+    </a>`
+  ).join("");
+}
+$("filter-location").addEventListener("change", renderServices);
+$("filter-animal").addEventListener("change", renderServices);
+$("filter-type").addEventListener("change", renderServices);
+
+// ------------------------- Init -------------------------
+renderApptPetOptions();
+renderAppointments();
+renderServices();
+renderHome();
+</script>
+</body>
+</html>
